@@ -3,6 +3,8 @@ pragma solidity ^0.5.0;
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
+import "openzeppelin-solidity/contracts/access/roles/MinterRole.sol";
+
 
 
 // ----------------------------------------------------------------------------
@@ -16,19 +18,10 @@ import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
-// Contract function to receive approval and execute function in one call
-// ----------------------------------------------------------------------------
-contract ApproveAndCallFallBack {
-    function receiveApproval(address from, uint256 tokens, address token, bytes memory data) public;
-}
-
-
-
-// ----------------------------------------------------------------------------
 // ERC20 Token, with the addition of symbol, name and decimals and assisted
 // token transfers
 // ----------------------------------------------------------------------------
-contract COMM is ERC20, Ownable {
+contract COMM is ERC20, Ownable, MinterRole {
     string public symbol;
     string public  name;
     uint8 public decimals;
@@ -93,7 +86,7 @@ contract COMM is ERC20, Ownable {
 
     // ------------------------------------------------------------------------
     // Transfer tokens from the from account to the to account
-    // 
+    //
     // The calling account must already have sufficient tokens approve(...)-d
     // for spending from the from account and
     // - From account must have sufficient balance to transfer
@@ -119,30 +112,28 @@ contract COMM is ERC20, Ownable {
 
 
     // ------------------------------------------------------------------------
-    // Token owner can approve for spender to transferFrom(...) tokens
-    // from the token owner's account. The spender contract function
-    // receiveApproval(...) is then executed
+    // @dev Function to mint tokens
+    // @param to The address that will receive the minted tokens.
+    // @param value The amount of tokens to mint.
+    // @return A boolean that indicates if the operation was successful.
     // ------------------------------------------------------------------------
-    function approveAndCall(address spender, uint tokens, bytes memory data) public returns (bool success) {
-        allowed[msg.sender][spender] = tokens;
-        emit Approval(msg.sender, spender, tokens);
-        ApproveAndCallFallBack(spender).receiveApproval(msg.sender, tokens, address(this), data);
+    function mint(address to, uint256 value) public onlyMinter returns (bool) {
+        _mint(to, value);
         return true;
     }
 
+    // ------------------------------------------------------------------------
+    //@dev Destroys `amount` tokens from the caller.
+    //See {ERC20-_burn}.
+    // ------------------------------------------------------------------------
+    function burn(uint256 amount) public {
+        _burn(msg.sender, amount);
+    }
 
     // ------------------------------------------------------------------------
     // Don't accept ETH
     // ------------------------------------------------------------------------
     function () external payable {
         revert();
-    }
-
-
-    // ------------------------------------------------------------------------
-    // Owner can transfer out any accidentally sent ERC20 tokens
-    // ------------------------------------------------------------------------
-    function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {
-        return ERC20(tokenAddress).transfer(owner(), tokens);
     }
 }

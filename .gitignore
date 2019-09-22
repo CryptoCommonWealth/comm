@@ -1,0 +1,42 @@
+#builds
+target/
+dependency-reduced-pom.xml
+
+#intellij
+.idea/
+.iws
+*.iml
+
+# Ignore Files
+.DS_Store
+**/donotcommit
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+# Eclipse
+.project
+.settings
+.classpath
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# logs
+logs/
+
+# clover coverage reports
+clover/
+
+# local processes
+*.pid
+
+# Emacs
+*~
+
+# Node
+dump.rdb
+node_modules
+

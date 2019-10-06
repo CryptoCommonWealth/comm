@@ -18,7 +18,6 @@ install project npm dependencies:
 All tests are run with:
 ```truffle tests```
 
-
 ### ERC20 compatible
 The COMM implements the ERC20 interface.
 
@@ -27,3 +26,8 @@ Tokens can be minted or burned on demand. The contract supports having multiple 
 
 ### Ownable
 The contract has an Owner, who can change the `owner`.
+
+### TokenVesting
+A token holder contract that can release its token balance gradually like a typical vesting scheme, with a cliff and vesting period. 
+Optionally revocable by the owner.
+See: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/drafts/TokenVesting.sol

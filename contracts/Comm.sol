@@ -38,9 +38,9 @@ contract COMM is ERC20, Ownable, MinterRole {
         symbol = "COMM";
         name = "Crypto Commonwealth";
         decimals = 18;
-        _totalSupply = 1000000000000000000000000000;
-        balances[0x445419a4644985a12346Bbd31C41f5017f3527E8] = _totalSupply;
-        emit Transfer(address(0), 0x445419a4644985a12346Bbd31C41f5017f3527E8, _totalSupply);
+        _totalSupply = 1000000000000000000000000000; // 1000000000
+        balances[msg.sender] = _totalSupply;
+        emit Transfer(address(0), msg.sender, _totalSupply);
     }
 
 

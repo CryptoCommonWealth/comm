@@ -20,7 +20,9 @@
   "author": "",
   "license": "ISC",
   "homepage": "https://cryptosmartbeta.com/",
-  "dependencies": {},
+  "dependencies": {
+    "web3": "^1.2.1"
+  },
   "devDependencies": {
     "babel-polyfill": "^6.23.0",
     "babel-preset-env": "^1.1.8",

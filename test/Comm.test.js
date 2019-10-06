@@ -41,11 +41,11 @@ contract('Common', function([deployer, sender, receiver]) {
     })
   })
 
-  describe('send tokens', () => {
+  describe('transfer', () => {
     let amount;
     let result;
 
-    describe('success', () => {
+    describe('transfer tokens', () => {
       beforeEach(async () => {
         amount = tokens(10);// 10
         result = await token.transfer(receiver, amount, {from: deployer});
@@ -56,12 +56,48 @@ contract('Common', function([deployer, sender, receiver]) {
         balanceOf = await token.balanceOf(deployer);
         balanceOf.toString().should.equal(tokens(999999990).toString());
         balanceOf = await token.balanceOf(receiver);
+        balanceOf.toString().should.equal(amount.toString());
+      })
+    })
+  })
+
+  describe('mint', () => {
+
+    it('deployer is minter', async () => {
+      const result = await token.isMinter(deployer);
+      result.should.equal(true);
+    })
+
+    it('sender is not minter', async () => {
+      const result = await token.isMinter(sender);
+      result.should.equal(false);
+    })
+
+    describe('mint to address receive tokens', () => {
+      beforeEach(async () => {
+        await token.mint(sender, tokens(10), {from: deployer});
+      })
+      it('track the totalSupply after mint', async () => {
+        const result = await token.totalSupply();
+        result.toString().should.equal(tokens(1000000010).toString());
+      })
+      it('track the sender balance', async () => {
+        let balanceOf;
+        balanceOf = await token.balanceOf(sender);
         balanceOf.toString().should.equal(tokens(10).toString());
       })
 
-
     })
+  })
 
+  describe('burn', () => {
+    beforeEach(async () => {
+      await token.burn(tokens(10), {from: deployer});
+    })
+    it('track the totalSupply after burn', async () => {
+      const result = await token.totalSupply();
+      result.toString().should.equal(tokens(999999990).toString());
+    })
   })
 
 })

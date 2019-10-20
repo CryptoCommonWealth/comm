@@ -32,10 +32,10 @@ contract CommTokenVesting is Ownable {
     uint256 private _duration;
     bool private _revocable;
 
-    // none linear params times 8 decimals
-    uint256 private _a0;
-    uint256 private _a1;
-    uint256 private durationInDays;
+    // non-linear params times 10^8
+    uint256 private _unlockParam0;
+    uint256 private _unlockParam1;
+    uint256 private _durationInDays;
     uint256 constant oneHundredMillion = 100000000;
 
     mapping (address => uint256) private _released;
@@ -49,11 +49,11 @@ contract CommTokenVesting is Ownable {
      * @param cliffDuration duration in seconds of the cliff in which tokens will begin to vest
      * @param start the time (as Unix time) at which point vesting starts
      * @param duration duration in seconds of the period in which the tokens will vest
-     * @param a0
-     * @param a1
+     * @param unlockParam0
+     * @param unlockParam1
      * @param revocable whether the vesting is revocable or not
      */
-    constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 a0, uint256 a1, bool revocable) public {
+    constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 unlockParam0, uint256 unlockParam1, bool revocable) public {
         require(beneficiary != address(0), "TokenVesting: beneficiary is the zero address");
         // solhint-disable-next-line max-line-length
         require(cliffDuration <= duration, "TokenVesting: cliff is longer than duration");
@@ -62,7 +62,7 @@ contract CommTokenVesting is Ownable {
         require(start.add(duration) > block.timestamp, "TokenVesting: final time is before current time");
 
 
-        require( a0 > 0 && a1 > 0, "TokenVesting: a0 or a1 is negative." );
+        require( unlockParam0 > 0 && unlockParam1 > 0, "TokenVesting: unlockParam0 or unlockParam1 is negative." );
         require( duration.div(86400) > 0, "TokenVesting: duration must be over a day at least." );
 
         _beneficiary = beneficiary;
@@ -71,9 +71,9 @@ contract CommTokenVesting is Ownable {
         _cliff = start.add(cliffDuration);
         _start = start;
 
-        durationInDays = duration.div(86400);
-        _a0 = a0;
-        _a1 = a1;
+        _durationInDays = duration.div(86400);
+        _unlockParam0 = unlockParam0;
+        _unlockParam1 = unlockParam1;
     }
 
     /**
@@ -102,6 +102,34 @@ contract CommTokenVesting is Ownable {
      */
     function duration() public view returns (uint256) {
         return _duration;
+    }
+
+    /**
+     * @return the unlockParam0 of the token vesting.
+    */
+    function unlockParam0() public view returns (uint256) {
+        return _unlockParam0;
+    }
+
+    /**
+    * @return the unlockParam1 of the token vesting.
+    */
+    function unlockParam1() public view returns (uint256) {
+        return _unlockParam1;
+    }
+
+    /**
+    * @return the unlockParam0 and unlockParam1 pre-check value of the token vesting.
+    */
+    function unlockParamPreCheck() public view returns (uint256) {
+        return 1 - _unlockParam0.div(oneHundredMillion) - _durationInDays.mul(_unlockParam1.div(oneHundredMillion));
+    }
+
+    /**
+    * @return the unlockParam2 of the token vesting.
+    */
+    function unlockParam2() public view returns (uint256) {
+        return unlockParamPreCheck().div(_durationInDays ** 3);
     }
 
     /**
@@ -177,21 +205,18 @@ contract CommTokenVesting is Ownable {
     function _vestedAmount(IERC20 token) private view returns (uint256) {
         uint256 currentBalance = token.balanceOf(address(this));
         uint256 totalBalance = currentBalance.add(_released[address(token)]);
-        uint256 a01 = 1 - _a0.div(oneHundredMillion) - durationInDays.mul(_a1.div(oneHundredMillion));
+        uint256 unlockParamPreCheck = unlockParamPreCheck();
 
         if (block.timestamp < _cliff) {
             return 0;
         } else if (block.timestamp >= _start.add(_duration) || _revoked[address(token)]) {
             return totalBalance;
-        } else if (_a0 == 0 && _a1 == 0) {
-            return totalBalance.mul(block.timestamp.sub(_start)).div(_duration);
-        } else if (a01 > 0) {
-            //  a0, a1 too large, use linear unlock instead.
+        } else if ((_unlockParam0 == 0 && _unlockParam1 == 0) || unlockParamPreCheck > 0) {
             return totalBalance.mul(block.timestamp.sub(_start)).div(_duration);
         } else {
-            uint256 a2 = a01.div(durationInDays ** 3);
+            uint256 unlockParam2 = unlockParamPreCheck.div(_durationInDays ** 3);
             uint256 daysPassed = block.timestamp.sub(_start).div(86400);
-            uint256 vestedAmount = totalBalance.mul(_a0) + totalBalance.mul(_a1 * daysPassed) + totalBalance.mul(a2 * daysPassed ** 3);
+            uint256 vestedAmount = totalBalance.mul(_unlockParam0) + totalBalance.mul(_unlockParam1 * daysPassed) + totalBalance.mul(unlockParam2 * daysPassed ** 3);
             return totalBalance < vestedAmount ? totalBalance : vestedAmount;
         }
     }

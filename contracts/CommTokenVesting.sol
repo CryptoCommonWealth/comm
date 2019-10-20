@@ -49,8 +49,8 @@ contract CommTokenVesting is Ownable {
      * @param cliffDuration duration in seconds of the cliff in which tokens will begin to vest
      * @param start the time (as Unix time) at which point vesting starts
      * @param duration duration in seconds of the period in which the tokens will vest
-     * @param unlockParam0
-     * @param unlockParam1
+     * @param unlockParam0 non-liner unlock param 0
+     * @param unlockParam1 non-liner unlock param 1
      * @param revocable whether the vesting is revocable or not
      */
     constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 unlockParam0, uint256 unlockParam1, bool revocable) public {
@@ -205,18 +205,17 @@ contract CommTokenVesting is Ownable {
     function _vestedAmount(IERC20 token) private view returns (uint256) {
         uint256 currentBalance = token.balanceOf(address(this));
         uint256 totalBalance = currentBalance.add(_released[address(token)]);
-        uint256 unlockParamPreCheck = unlockParamPreCheck();
+        uint256 unlockParam = unlockParamPreCheck();
 
         if (block.timestamp < _cliff) {
             return 0;
         } else if (block.timestamp >= _start.add(_duration) || _revoked[address(token)]) {
             return totalBalance;
-        } else if ((_unlockParam0 == 0 && _unlockParam1 == 0) || unlockParamPreCheck > 0) {
+        } else if ((_unlockParam0 == 0 && _unlockParam1 == 0) || unlockParam > 0) {
             return totalBalance.mul(block.timestamp.sub(_start)).div(_duration);
         } else {
-            uint256 unlockParam2 = unlockParamPreCheck.div(_durationInDays ** 3);
             uint256 daysPassed = block.timestamp.sub(_start).div(86400);
-            uint256 vestedAmount = totalBalance.mul(_unlockParam0) + totalBalance.mul(_unlockParam1 * daysPassed) + totalBalance.mul(unlockParam2 * daysPassed ** 3);
+            uint256 vestedAmount = totalBalance.mul(_unlockParam0) + totalBalance.mul(_unlockParam1 * daysPassed) + totalBalance.mul(unlockParam.div(_durationInDays ** 3) * daysPassed ** 3);
             return totalBalance < vestedAmount ? totalBalance : vestedAmount;
         }
     }

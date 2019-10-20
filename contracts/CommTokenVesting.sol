@@ -191,7 +191,8 @@ contract CommTokenVesting is Ownable {
         } else {
             uint256 a2 = a01.div(durationInDays ** 3);
             uint256 daysPassed = block.timestamp.sub(_start).div(86400);
-            return min(totalBalance, totalBalance.mul(_a0) + totalBalance.mul(_a1 * daysPassed) + totalBalance.mul(a2 * daysPassed ** 3));
+            uint256 vestedAmount = totalBalance.mul(_a0) + totalBalance.mul(_a1 * daysPassed) + totalBalance.mul(a2 * daysPassed ** 3);
+            return totalBalance < vestedAmount ? totalBalance : vestedAmount;
         }
     }
 }

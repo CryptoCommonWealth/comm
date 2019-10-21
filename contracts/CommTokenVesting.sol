@@ -61,8 +61,8 @@ contract CommTokenVesting is Ownable {
         // solhint-disable-next-line max-line-length
         require(start.add(duration) > block.timestamp, "TokenVesting: final time is before current time");
 
-        require( unlockParam0 >= 0 && unlockParam1 >= 0, "TokenVesting: unlockParam0 or unlockParam1 is negative." );
-        require( duration >= 86400, "TokenVesting: duration must be over a day at least." );
+        require(unlockParam0 >= 0 && unlockParam1 >= 0, "TokenVesting: unlockParam0 or unlockParam1 is negative.");
+        require(duration >= 86400, "TokenVesting: duration must be over a day at least.");
 
         _beneficiary = beneficiary;
         _revocable = revocable;

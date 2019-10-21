@@ -205,7 +205,7 @@ contract CommTokenVesting is Ownable {
         uint256 currentBalance = token.balanceOf(address(this));
         uint256 totalBalance = currentBalance.add(_released[address(token)]);
 
-        require(unlockParamPreCheck() > 0, "TokenVesting: _unlockParam0, _unlockParam1 too large");
+        require(unlockParamPreCheck() >= 0, "TokenVesting: _unlockParam0, _unlockParam1 too large");
 
         if (block.timestamp < _cliff) {
             return 0;

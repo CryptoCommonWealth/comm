@@ -204,13 +204,14 @@ contract CommTokenVesting is Ownable {
     function _vestedAmount(IERC20 token) private view returns (uint256) {
         uint256 currentBalance = token.balanceOf(address(this));
         uint256 totalBalance = currentBalance.add(_released[address(token)]);
-        uint256 unlockParam = unlockParamPreCheck();
+
+        require(unlockParamPreCheck() > 0, "TokenVesting: _unlockParam0, _unlockParam1 too large");
 
         if (block.timestamp < _cliff) {
             return 0;
         } else if (block.timestamp >= _start.add(_duration) || _revoked[address(token)]) {
             return totalBalance;
-        } else if ((_unlockParam0 == 0 && _unlockParam1 == 0) || unlockParam <= 0) {
+        } else if (_unlockParam0 == 0 && _unlockParam1 == 0) {
             return totalBalance.mul(block.timestamp.sub(_start)).div(_duration);
         } else {
             uint256 daysPassed = block.timestamp.sub(_start).div(86400);

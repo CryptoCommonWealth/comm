@@ -121,8 +121,7 @@ contract CommTokenVesting is Ownable {
     * @return the unlockParam0 and unlockParam1 pre-check value of the token vesting.
     */
     function unlockParamPreCheck() public view returns (uint256) {
-        uint256 one = 1;
-        return one.sub(_unlockParam0.div(oneHundredMillion)).sub(_durationInDays.mul(_unlockParam1.div(oneHundredMillion)));
+        return oneHundredMillion.sub(_unlockParam0).sub(_durationInDays.mul(_unlockParam1));
     }
 
     /**
@@ -211,13 +210,13 @@ contract CommTokenVesting is Ownable {
             return 0;
         } else if (block.timestamp >= _start.add(_duration) || _revoked[address(token)]) {
             return totalBalance;
-        } else if ((_unlockParam0 == 0 && _unlockParam1 == 0) || unlockParam <= 0) {
+        } else if ((_unlockParam0 == 0 && _unlockParam1 == 0) || unlockParam <= oneHundredMillion) {
             return totalBalance.mul(block.timestamp.sub(_start)).div(_duration);
         } else {
             uint256 daysPassed = block.timestamp.sub(_start).div(86400);
-            uint256 amount0 = totalBalance.mul(_unlockParam0.div(oneHundredMillion));
-            uint256 amount1 = totalBalance.mul(_unlockParam1.div(oneHundredMillion).mul(daysPassed));
-            uint256 amount2 = totalBalance.mul(unlockParam.div(_durationInDays ** 3) * daysPassed ** 3);
+            uint256 amount0 = totalBalance.mul(_unlockParam0).div(oneHundredMillion);
+            uint256 amount1 = totalBalance.mul(_unlockParam1).mul(daysPassed).div(oneHundredMillion);
+            uint256 amount2 = totalBalance.mul(unlockParam.div(_durationInDays ** 3) * daysPassed ** 3).div(oneHundredMillion);
             uint256 vestedAmount = amount0.add(amount1).add(amount2);
             return totalBalance < vestedAmount ? totalBalance : vestedAmount;
         }

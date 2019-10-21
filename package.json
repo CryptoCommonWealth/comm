@@ -39,6 +39,7 @@
     "ethjs-abi": "^0.2.1",
     "truffle": "^4.0.0",
     "truffle-hdwallet-provider": "0.0.3",
-    "openzeppelin-solidity": "2.3.0"
+    "openzeppelin-solidity": "2.3.0",
+    "@openzeppelin/test-helpers": "0.5.3"
   }
 }

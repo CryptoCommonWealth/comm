@@ -128,7 +128,7 @@ contract CommTokenVesting is Ownable {
     * @return the unlockParam2 of the token vesting.
     */
     function unlockParam2() public view returns (uint256) {
-        return unlockParamPreCheck().div(_durationInDays ** 3);
+        return unlockParamPreCheck().div(_durationInDays.mul(_durationInDays).mul(_durationInDays));
     }
 
     /**

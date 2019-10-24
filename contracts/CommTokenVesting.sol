@@ -58,7 +58,6 @@ contract CommTokenVesting is Ownable {
         require(beneficiary != address(0), "TokenVesting: beneficiary is the zero address");
         // solhint-disable-next-line max-line-length
         require(cliffDuration <= duration, "TokenVesting: cliff is longer than duration");
-        require(duration > 0, "TokenVesting: duration is 0");
         // solhint-disable-next-line max-line-length
         require(start.add(duration) > block.timestamp, "TokenVesting: final time is before current time");
 
@@ -206,8 +205,6 @@ contract CommTokenVesting is Ownable {
     function _vestedAmount(IERC20 token) private view returns (uint256) {
         uint256 currentBalance = token.balanceOf(address(this));
         uint256 totalBalance = currentBalance.add(_released[address(token)]);
-
-        require(isNLReleasable() >= 0, "TokenVesting: _unlockParam0, _unlockParam1 too large");
 
         if (block.timestamp < _cliff) {
             return 0;

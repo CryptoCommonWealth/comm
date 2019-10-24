@@ -35,6 +35,9 @@ contract CommTokenVesting is Ownable {
     // non-linear params times 10^8
     uint256 private _immedReleasedAmount;
     uint256 private _dailyReleasedAmount;
+    uint256 private _isNLReleasable;
+    uint256 private _dailyReleasedNLAmount;
+
     uint256 private _durationInDays;
     uint256 constant oneHundredMillion = 100000000;
     uint256 constant secondsPerDay = 86400;
@@ -70,86 +73,90 @@ contract CommTokenVesting is Ownable {
         _start = start;
 
         _durationInDays = duration.div(secondsPerDay);
+
+        require(immedReleasedAmount <= oneHundredMillion, "TokenVesting: immedReleasedAmount is larger than 100000000.");
+        require(dailyReleasedAmount.mul(_durationInDays) <= oneHundredMillion, "TokenVesting: immedReleasedAmount*_durationInDays is larger than 100000000.");
+
         _immedReleasedAmount = immedReleasedAmount;
         _dailyReleasedAmount = dailyReleasedAmount;
         _isNLReleasable = oneHundredMillion.sub(_immedReleasedAmount).sub(_durationInDays.mul(_dailyReleasedAmount));
-        _dailyReleasedNLAmount = isNLReleasable().div(_durationInDays.mul(_durationInDays).mul(_durationInDays));
+        _dailyReleasedNLAmount = _isNLReleasable.div(_durationInDays.mul(_durationInDays).mul(_durationInDays));
     }
 
     /**
      * @return the beneficiary of the tokens.
      */
-    function beneficiary() public view returns (address) {
+    function beneficiary() external view returns (address) {
         return _beneficiary;
     }
 
     /**
      * @return the cliff time of the token vesting.
      */
-    function cliff() public view returns (uint256) {
+    function cliff() external view returns (uint256) {
         return _cliff;
     }
 
     /**
      * @return the start time of the token vesting.
      */
-    function start() public view returns (uint256) {
+    function start() external view returns (uint256) {
         return _start;
     }
 
     /**
      * @return the duration of the token vesting.
      */
-    function duration() public view returns (uint256) {
+    function duration() external view returns (uint256) {
         return _duration;
     }
 
     /**
      * @return the immedReleasedAmount of the token vesting.
     */
-    function immedReleasedAmount() public view returns (uint256) {
+    function immedReleasedAmount() external view returns (uint256) {
         return _immedReleasedAmount;
     }
 
     /**
     * @return the dailyReleasedAmount of the token vesting.
     */
-    function dailyReleasedAmount() public view returns (uint256) {
+    function dailyReleasedAmount() external view returns (uint256) {
         return _dailyReleasedAmount;
     }
 
     /**
-    * @return the _isNLReleasable value of the token vesting.
+    * @return the isNLReleasable value of the token vesting.
     */
-    function isNLReleasable() public view returns (uint256) {
+    function isNLReleasable() external view returns (uint256) {
         return _isNLReleasable;
     }
 
     /**
-    * @return the unlockParam2 of the token vesting.
+    * @return the dailyReleasedNLAmount of the token vesting.
     */
-    function dailyReleasedNLAmount() public view returns (uint256) {
+    function dailyReleasedNLAmount() external view returns (uint256) {
         return _dailyReleasedNLAmount;
     }
 
     /**
      * @return true if the vesting is revocable.
      */
-    function revocable() public view returns (bool) {
+    function revocable() external view returns (bool) {
         return _revocable;
     }
 
     /**
      * @return the amount of the token released.
      */
-    function released(address token) public view returns (uint256) {
+    function released(address token) external view returns (uint256) {
         return _released[token];
     }
 
     /**
      * @return true if the token is revoked.
      */
-    function revoked(address token) public view returns (bool) {
+    function revoked(address token) external view returns (bool) {
         return _revoked[token];
     }
 
@@ -216,7 +223,7 @@ contract CommTokenVesting is Ownable {
             uint256 daysPassed = block.timestamp.sub(_start).div(secondsPerDay);
             uint256 amount0 = totalBalance.mul(_immedReleasedAmount).div(oneHundredMillion);
             uint256 amount1 = totalBalance.mul(_dailyReleasedAmount).mul(daysPassed).div(oneHundredMillion);
-            uint256 amount2 = totalBalance.mul(dailyReleasedNLAmount().mul(daysPassed.mul(daysPassed).mul(daysPassed))).div(oneHundredMillion);
+            uint256 amount2 = totalBalance.mul(_dailyReleasedNLAmount.mul(daysPassed.mul(daysPassed).mul(daysPassed))).div(oneHundredMillion);
             uint256 vestedAmount = amount0.add(amount1).add(amount2);
             return totalBalance < vestedAmount ? totalBalance : vestedAmount;
         }

@@ -71,7 +71,7 @@ contract CommTokenVesting is Ownable {
         _durationInDays = duration.div(secondsPerDay);
 
         require(immedReleasedAmount <= oneHundredMillion, "TokenVesting: immedReleasedAmount is larger than 100000000.");
-        require(dailyReleasedAmount.mul(_durationInDays) <= oneHundredMillion, "TokenVesting: immedReleasedAmount*_durationInDays is larger than 100000000.");
+        require(dailyReleasedAmount.mul(_durationInDays) <= oneHundredMillion, "TokenVesting: dailyReleasedAmount*_durationInDays is larger than 100000000.");
 
         _immedReleasedAmount = immedReleasedAmount;
         _dailyReleasedAmount = dailyReleasedAmount;

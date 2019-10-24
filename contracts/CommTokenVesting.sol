@@ -37,8 +37,8 @@ contract CommTokenVesting is Ownable {
     uint256 private _dailyReleasedAmount;
     uint256 private _isNLReleasable;
     uint256 private _dailyReleasedNLAmount;
-
     uint256 private _durationInDays;
+
     uint256 constant oneHundredMillion = 100000000;
     uint256 constant secondsPerDay = 86400;
 
@@ -59,11 +59,8 @@ contract CommTokenVesting is Ownable {
      */
     constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 immedReleasedAmount, uint256 dailyReleasedAmount, bool revocable) public {
         require(beneficiary != address(0), "TokenVesting: beneficiary is the zero address");
-        // solhint-disable-next-line max-line-length
         require(cliffDuration <= duration, "TokenVesting: cliff is longer than duration");
-        // solhint-disable-next-line max-line-length
         require(start.add(duration) > block.timestamp, "TokenVesting: final time is before current time");
-
         require(duration >= secondsPerDay, "TokenVesting: duration must be over a day at least.");
 
         _beneficiary = beneficiary;
@@ -71,7 +68,6 @@ contract CommTokenVesting is Ownable {
         _duration = duration;
         _cliff = start.add(cliffDuration);
         _start = start;
-
         _durationInDays = duration.div(secondsPerDay);
 
         require(immedReleasedAmount <= oneHundredMillion, "TokenVesting: immedReleasedAmount is larger than 100000000.");

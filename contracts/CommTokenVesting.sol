@@ -33,10 +33,11 @@ contract CommTokenVesting is Ownable {
     bool private _revocable;
 
     // non-linear params times 10^8
-    uint256 private _unlockParam0;
-    uint256 private _unlockParam1;
+    uint256 private _immedReleasedAmount;
+    uint256 private _dailyReleasedAmount;
     uint256 private _durationInDays;
     uint256 constant oneHundredMillion = 100000000;
+    uint256 constant secondsPerDay = 86400;
 
     mapping (address => uint256) private _released;
     mapping (address => bool) private _revoked;
@@ -49,11 +50,11 @@ contract CommTokenVesting is Ownable {
      * @param cliffDuration duration in seconds of the cliff in which tokens will begin to vest
      * @param start the time (as Unix time) at which point vesting starts
      * @param duration duration in seconds of the period in which the tokens will vest
-     * @param unlockParam0 non-liner unlock param 0
-     * @param unlockParam1 non-liner unlock param 1
+     * @param immedReleasedAmount non-liner unlock param
+     * @param dailyReleasedAmount non-liner unlock param
      * @param revocable whether the vesting is revocable or not
      */
-    constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 unlockParam0, uint256 unlockParam1, bool revocable) public {
+    constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 immedReleasedAmount, uint256 dailyReleasedAmount, bool revocable) public {
         require(beneficiary != address(0), "TokenVesting: beneficiary is the zero address");
         // solhint-disable-next-line max-line-length
         require(cliffDuration <= duration, "TokenVesting: cliff is longer than duration");
@@ -61,8 +62,7 @@ contract CommTokenVesting is Ownable {
         // solhint-disable-next-line max-line-length
         require(start.add(duration) > block.timestamp, "TokenVesting: final time is before current time");
 
-        require(unlockParam0 >= 0 && unlockParam1 >= 0, "TokenVesting: unlockParam0 or unlockParam1 is negative.");
-        require(duration >= 86400, "TokenVesting: duration must be over a day at least.");
+        require(duration >= secondsPerDay, "TokenVesting: duration must be over a day at least.");
 
         _beneficiary = beneficiary;
         _revocable = revocable;
@@ -70,9 +70,11 @@ contract CommTokenVesting is Ownable {
         _cliff = start.add(cliffDuration);
         _start = start;
 
-        _durationInDays = duration.div(86400);
-        _unlockParam0 = unlockParam0;
-        _unlockParam1 = unlockParam1;
+        _durationInDays = duration.div(secondsPerDay);
+        _immedReleasedAmount = immedReleasedAmount;
+        _dailyReleasedAmount = dailyReleasedAmount;
+        _isNLReleasable = oneHundredMillion.sub(_immedReleasedAmount).sub(_durationInDays.mul(_dailyReleasedAmount));
+        _dailyReleasedNLAmount = isNLReleasable().div(_durationInDays.mul(_durationInDays).mul(_durationInDays));
     }
 
     /**
@@ -104,31 +106,31 @@ contract CommTokenVesting is Ownable {
     }
 
     /**
-     * @return the unlockParam0 of the token vesting.
+     * @return the immedReleasedAmount of the token vesting.
     */
-    function unlockParam0() public view returns (uint256) {
-        return _unlockParam0;
+    function immedReleasedAmount() public view returns (uint256) {
+        return _immedReleasedAmount;
     }
 
     /**
-    * @return the unlockParam1 of the token vesting.
+    * @return the dailyReleasedAmount of the token vesting.
     */
-    function unlockParam1() public view returns (uint256) {
-        return _unlockParam1;
+    function dailyReleasedAmount() public view returns (uint256) {
+        return _dailyReleasedAmount;
     }
 
     /**
-    * @return the unlockParam0 and unlockParam1 pre-check value of the token vesting.
+    * @return the _isNLReleasable value of the token vesting.
     */
-    function unlockParamPreCheck() public view returns (uint256) {
-        return oneHundredMillion.sub(_unlockParam0).sub(_durationInDays.mul(_unlockParam1));
+    function isNLReleasable() public view returns (uint256) {
+        return _isNLReleasable;
     }
 
     /**
     * @return the unlockParam2 of the token vesting.
     */
-    function unlockParam2() public view returns (uint256) {
-        return unlockParamPreCheck().div(_durationInDays.mul(_durationInDays).mul(_durationInDays));
+    function dailyReleasedNLAmount() public view returns (uint256) {
+        return _dailyReleasedNLAmount;
     }
 
     /**
@@ -205,19 +207,19 @@ contract CommTokenVesting is Ownable {
         uint256 currentBalance = token.balanceOf(address(this));
         uint256 totalBalance = currentBalance.add(_released[address(token)]);
 
-        require(unlockParamPreCheck() >= 0, "TokenVesting: _unlockParam0, _unlockParam1 too large");
+        require(isNLReleasable() >= 0, "TokenVesting: _unlockParam0, _unlockParam1 too large");
 
         if (block.timestamp < _cliff) {
             return 0;
         } else if (block.timestamp >= _start.add(_duration) || _revoked[address(token)]) {
             return totalBalance;
-        } else if (_unlockParam0 == 0 && _unlockParam1 == 0) {
+        } else if (_immedReleasedAmount == 0 && _dailyReleasedAmount == 0) {
             return totalBalance.mul(block.timestamp.sub(_start)).div(_duration);
         } else {
-            uint256 daysPassed = block.timestamp.sub(_start).div(86400);
-            uint256 amount0 = totalBalance.mul(_unlockParam0).div(oneHundredMillion);
-            uint256 amount1 = totalBalance.mul(_unlockParam1).mul(daysPassed).div(oneHundredMillion);
-            uint256 amount2 = totalBalance.mul(unlockParam2().mul(daysPassed.mul(daysPassed).mul(daysPassed))).div(oneHundredMillion);
+            uint256 daysPassed = block.timestamp.sub(_start).div(secondsPerDay);
+            uint256 amount0 = totalBalance.mul(_immedReleasedAmount).div(oneHundredMillion);
+            uint256 amount1 = totalBalance.mul(_dailyReleasedAmount).mul(daysPassed).div(oneHundredMillion);
+            uint256 amount2 = totalBalance.mul(dailyReleasedNLAmount().mul(daysPassed.mul(daysPassed).mul(daysPassed))).div(oneHundredMillion);
             uint256 vestedAmount = amount0.add(amount1).add(amount2);
             return totalBalance < vestedAmount ? totalBalance : vestedAmount;
         }

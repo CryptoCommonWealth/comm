@@ -20,9 +20,6 @@ contract CommTokenVesting is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    event TokensReleased(address token, uint256 amount);
-    event TokenVestingRevoked(address token);
-
     // beneficiary of tokens after they are released
     address private _beneficiary;
 
@@ -39,11 +36,14 @@ contract CommTokenVesting is Ownable {
     uint256 private _dailyReleasedNLAmount;
     uint256 private _durationInDays;
 
+    mapping (address => uint256) private _released;
+    mapping (address => bool) private _revoked;
+
     uint256 constant oneHundredMillion = 100000000;
     uint256 constant secondsPerDay = 86400;
 
-    mapping (address => uint256) private _released;
-    mapping (address => bool) private _revoked;
+    event TokensReleased(address token, uint256 amount);
+    event TokenVestingRevoked(address token);
 
     /**
      * @dev Creates a vesting contract that vests its balance of any ERC20 token to the

@@ -51,17 +51,17 @@ contract('CommTokenVesting', function ([_, owner, beneficiary]) {
             );
         });
 
-        it('reverts immedReleasedAmount is larger than 100000000.', async function() {
+        it('reverts immedReleasedRatio is larger than 100000000.', async function() {
             await expectRevert(
                 CommTokenVesting.new(beneficiary, start, cliffDuration, duration, ONE_HUNDRED_MILLION + 1, 0, true, { from: owner }),
-                'TokenVesting: immedReleasedAmount is larger than 100000000.'
+                'TokenVesting: immedReleasedRatio is larger than 100000000.'
             );
         });
 
-        it('reverts dailyReleasedAmount*_durationInDays is larger than 100000000.', async function() {
+        it('reverts dailyReleasedRatio*_durationInDays is larger than 100000000.', async function() {
             await expectRevert(
                 CommTokenVesting.new(beneficiary, start, cliffDuration, duration, 0, ONE_HUNDRED_MILLION, true, { from: owner }),
-                'TokenVesting: dailyReleasedAmount*_durationInDays is larger than 100000000.'
+                'TokenVesting: dailyReleasedRatio*_durationInDays is larger than 100000000.'
             );
         })
     });

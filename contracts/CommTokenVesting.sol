@@ -30,8 +30,8 @@ contract CommTokenVesting is Ownable {
     bool private _revocable;
 
     // non-linear params times 10^8
-    uint256 private _immedReleasedAmount;
-    uint256 private _dailyReleasedAmount;
+    uint256 private _immedReleasedRatio;
+    uint256 private _dailyReleasedRatio;
     uint256 private _isNLReleasable;
     uint256 private _dailyReleasedNLAmount;
     uint256 private _durationInDays;
@@ -53,11 +53,11 @@ contract CommTokenVesting is Ownable {
      * @param cliffDuration duration in seconds of the cliff in which tokens will begin to vest
      * @param start the time (as Unix time) at which point vesting starts
      * @param duration duration in seconds of the period in which the tokens will vest
-     * @param immedReleasedAmount non-liner unlock param
-     * @param dailyReleasedAmount non-liner unlock param
+     * @param immedReleasedRatio non-liner unlock param
+     * @param dailyReleasedRatio non-liner unlock param
      * @param revocable whether the vesting is revocable or not
      */
-    constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 immedReleasedAmount, uint256 dailyReleasedAmount, bool revocable) public {
+    constructor (address beneficiary, uint256 start, uint256 cliffDuration, uint256 duration, uint256 immedReleasedRatio, uint256 dailyReleasedRatio, bool revocable) public {
         require(beneficiary != address(0), "TokenVesting: beneficiary is the zero address");
         require(cliffDuration <= duration, "TokenVesting: cliff is longer than duration");
         require(start.add(duration) > block.timestamp, "TokenVesting: final time is before current time");
@@ -70,12 +70,12 @@ contract CommTokenVesting is Ownable {
         _start = start;
         _durationInDays = duration.div(secondsPerDay);
 
-        require(immedReleasedAmount <= oneHundredMillion, "TokenVesting: immedReleasedAmount is larger than 100000000.");
-        require(dailyReleasedAmount.mul(_durationInDays) <= oneHundredMillion, "TokenVesting: dailyReleasedAmount*_durationInDays is larger than 100000000.");
+        require(immedReleasedRatio <= oneHundredMillion, "TokenVesting: immedReleasedRatio is larger than 100000000.");
+        require(dailyReleasedRatio.mul(_durationInDays) <= oneHundredMillion, "TokenVesting: dailyReleasedRatio*_durationInDays is larger than 100000000.");
 
-        _immedReleasedAmount = immedReleasedAmount;
-        _dailyReleasedAmount = dailyReleasedAmount;
-        _isNLReleasable = oneHundredMillion.sub(_immedReleasedAmount).sub(_durationInDays.mul(_dailyReleasedAmount));
+        _immedReleasedRatio = immedReleasedRatio;
+        _dailyReleasedRatio = dailyReleasedRatio;
+        _isNLReleasable = oneHundredMillion.sub(_immedReleasedRatio).sub(_durationInDays.mul(_dailyReleasedRatio));
         _dailyReleasedNLAmount = _isNLReleasable.div(_durationInDays.mul(_durationInDays).mul(_durationInDays));
     }
 
@@ -108,17 +108,17 @@ contract CommTokenVesting is Ownable {
     }
 
     /**
-     * @return the immedReleasedAmount of the token vesting.
+     * @return the immedReleasedRatio of the token vesting.
     */
-    function immedReleasedAmount() external view returns (uint256) {
-        return _immedReleasedAmount;
+    function immedReleasedRatio() external view returns (uint256) {
+        return _immedReleasedRatio;
     }
 
     /**
-    * @return the dailyReleasedAmount of the token vesting.
+    * @return the dailyReleasedRatio of the token vesting.
     */
-    function dailyReleasedAmount() external view returns (uint256) {
-        return _dailyReleasedAmount;
+    function dailyReleasedRatio() external view returns (uint256) {
+        return _dailyReleasedRatio;
     }
 
     /**
@@ -213,12 +213,12 @@ contract CommTokenVesting is Ownable {
             return 0;
         } else if (block.timestamp >= _start.add(_duration) || _revoked[address(token)]) {
             return totalBalance;
-        } else if (_immedReleasedAmount == 0 && _dailyReleasedAmount == 0) {
+        } else if (_immedReleasedRatio == 0 && _dailyReleasedRatio == 0) {
             return totalBalance.mul(block.timestamp.sub(_start)).div(_duration);
         } else {
             uint256 daysPassed = block.timestamp.sub(_start).div(secondsPerDay);
-            uint256 amount0 = totalBalance.mul(_immedReleasedAmount).div(oneHundredMillion);
-            uint256 amount1 = totalBalance.mul(_dailyReleasedAmount).mul(daysPassed).div(oneHundredMillion);
+            uint256 amount0 = totalBalance.mul(_immedReleasedRatio).div(oneHundredMillion);
+            uint256 amount1 = totalBalance.mul(_dailyReleasedRatio).mul(daysPassed).div(oneHundredMillion);
             uint256 amount2 = totalBalance.mul(_dailyReleasedNLAmount.mul(daysPassed.mul(daysPassed).mul(daysPassed))).div(oneHundredMillion);
             uint256 vestedAmount = amount0.add(amount1).add(amount2);
             return totalBalance < vestedAmount ? totalBalance : vestedAmount;

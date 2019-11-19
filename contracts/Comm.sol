@@ -1,16 +1,14 @@
 pragma solidity ^0.5.8;
 
-import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
-import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
-import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
-import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol';
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "openzeppelin-solidity/contracts/access/roles/MinterRole.sol";
 
 
 // ----------------------------------------------------------------------------
 // Crypto Commonwealth token contract
-// Contract address: 0x39a765d3dc72292a9f607f72fad446d51b0ef824
-// Deployed to : 0x445419a4644985a12346Bbd31C41f5017f3527E8
 // Symbol      : COMM
 // Name        : Crypto Commonwealth
 // Total supply: 1000000000
